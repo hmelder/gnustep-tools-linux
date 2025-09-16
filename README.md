@@ -1,5 +1,17 @@
-GNUstep Android Toolchain
+GNUstep Linux Toolchain
 =========================
+
+Currently the following external dependencies are needed:
+
+- ffi (HIGHLY RECOMMENDED)
+- icu (HIGHLY RECOMMENDED)
+- gnutls (HIGHLY RECOMMENDED)
+- libxml2 (RECOMMENDED)
+- libxslt (OPTIONAL)
+- zlib (RECOMMENDED)
+- iconv (OPTIONAL, not needed if you have glibc)
+- openssl (OPTIONAL, not needed if you have gnutls)
+- libcurl (REQUIRED)
 
 [![CI](https://github.com/gnustep/tools-android/actions/workflows/ci.yml/badge.svg)](https://github.com/gnustep/tools-android/actions/workflows/ci.yml?query=branch%3Amaster)
 

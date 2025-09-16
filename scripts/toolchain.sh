@@ -2,22 +2,17 @@
 
 echo "### Set toolchain vars"
 
-# Relevant documentation:
-# https://developer.android.com/ndk/guides/other_build_systems
-# https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md
-
-export TOOLCHAIN="${ANDROID_NDK_ROOT}"/toolchains/llvm/prebuilt/${HOST_TAG}
-export CC="${TOOLCHAIN}"/bin/${ANDROID_TARGET}${ANDROID_API_LEVEL}-clang
-export CXX="${TOOLCHAIN}"/bin/${ANDROID_TARGET}${ANDROID_API_LEVEL}-clang++
+export CC=clang
+export CXX=clang++
 export OBJC="${CC}"
 export OBJCXX="${CXX}"
-export LD="${TOOLCHAIN}"/bin/ld.lld
-export AR="${TOOLCHAIN}"/bin/llvm-ar
+export LD=ld.lld
+export AR=llvm-ar
 export AS="${CC}"
-export RANLIB="${TOOLCHAIN}"/bin/llvm-ranlib
-export STRIP="${TOOLCHAIN}"/bin/llvm-strip
-export NM="${TOOLCHAIN}"/bin/llvm-nm
-export OBJDUMP="${TOOLCHAIN}"/bin/llvm-objdump
+export RANLIB=llvm-ranlib
+export STRIP=llvm-strip
+export NM=llvm-nm
+export OBJDUMP=llvm-objdump
 export PKG_CONFIG_PATH="${INSTALL_PREFIX}/lib/pkgconfig"
 
 # always generate debug info and build with optimizations
@@ -36,50 +31,13 @@ export CFLAGS="$OPTFLAG -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIC"
 # -L library search path required for some projects to find libraries (e.g. gnustep-corebase)
 # -fuse-ld=lld require to enforce LLD, which is needed e.g. for --no-rosegment flag
 # --build-id=sha1 required for Android Studio to locate debug information
-# --no-rosegment required for correct unwinding on devices prior to API 29
 # --gc-sections is recommended to decrease binary size
-export LDFLAGS="-L${INSTALL_PREFIX}/lib -fuse-ld=lld -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--gc-sections"
-
-ADDITIONAL_CMAKE_FLAGS=
-case $ABI_NAME in
-  armeabi-v7a)
-    # use Thumb instruction set for smaller code
-    export CFLAGS="$CFLAGS -mthumb"
-    # don't export symbols from libunwind
-    export LDFLAGS="$LDFLAGS -Wl,--exclude-libs,libunwind.a"
-    ;;
-  arm64-v8a)
-    export LDFLAGS="$LDFLAGS -Wl,-z,max-page-size=16384"
-    ADDITIONAL_CMAKE_FLAGS="-Wl,-z,max-page-size=16384"
-    ;;
-  x86)
-    # properly align stacks for global constructors when targeting API < 24
-    if [ "$ANDROID_API_LEVEL" -lt "24" ]; then
-      export CFLAGS="$CFLAGS -mstackrealign"
-    fi
-    ;;
-  x86_64)
-    export LDFLAGS="$LDFLAGS -Wl,-z,max-page-size=16384"
-    ADDITIONAL_CMAKE_FLAGS="-Wl,-z,max-page-size=16384"
-    ;;
-esac
-
+export LDFLAGS="-L${INSTALL_PREFIX}/lib -fuse-ld=lld -Wl,--build-id=sha1 -Wl,--gc-sections"
 export CXXFLAGS=$CFLAGS
 
-# ensure libraries link against shared C++ runtime library
-export LIBS="-lc++_shared"
-
 # common options for CMake-based projects
-# CMAKE_FIND_USE_CMAKE_PATH=false fixes finding incorrect libraries in $TOOLCHAIN/lib[64] instead of $TOOLCHAIN/sysroot/usr/lib/$ANDROID_TARGET, e.g. for libc++abi.a for libobjc2.
 CMAKE_OPTIONS=" \
   -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" \
   -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-  -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
-  -DCMAKE_FIND_USE_CMAKE_PATH=false \
-  -DCMAKE_FIND_ROOT_PATH=${INSTALL_PREFIX} \
-  -DANDROID_ABI=${ABI_NAME} \
-  -DANDROID_NDK=${ANDROID_NDK_ROOT} \
-  -DANDROID_PLATFORM=android-${ANDROID_API_LEVEL} \
-  -DANDROID_STL=c++_shared \
   -DCMAKE_SHARED_LINKER_FLAGS=$ADDITIONAL_CMAKE_FLAGS \
 "

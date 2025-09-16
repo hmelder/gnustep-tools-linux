@@ -19,7 +19,6 @@ echo "### Source GNUstep.sh"
 
 echo -e "\n### Running configure"
 ./configure \
-  --host=${ANDROID_TARGET} \
   --prefix="${INSTALL_PREFIX}" \
 
 echo -e "\n### Building"

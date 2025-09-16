@@ -11,11 +11,7 @@ display_usage() {
   echo ""
   echo "Usage: $0"
   echo "  --prefix INSTALL_ROOT      Install toolchain into given directory (default: ${INSTALL_ROOT})"
-  echo "  --dist-root DIST_ROOT      Make toolchain relocatable to given path relative to home folder on other machines"
-  echo "                             (use \"HOME\" as placeholder for home folder, e.g. \"HOME/Library/Android/GNUstep\")"
-  echo "  -n, --ndk NDK_PATH         Path to Android NDK (default: $ANDROID_NDK_ROOT)"
   echo "  -a, --abis ABI_NAMES       ABIs being targeted (default: \"${ABI_NAMES}\")"
-  echo "  -l, --level API_LEVEL      Android API level being targeted (default: ${ANDROID_API_LEVEL})"
   echo "  -b, --build BUILD_TYPE     Build type \"Debug\" or \"Release\" or \"RelWithDebInfo\" (default: ${BUILD_TYPE})"
   echo "  -u, --no-update            Don't update projects to latest version from GitHub"
   echo "  -c, --no-clean             Don't clean projects during build (e.g. for building local changes, only applies to first ABI being built)"
@@ -36,20 +32,8 @@ do
         export INSTALL_ROOT=$2
         shift # option has parameter
         ;;
-      --dist-root)
-        export DIST_ROOT=$2
-        shift # option has parameter
-        ;;
-      -n|--ndk)
-        export ANDROID_NDK_ROOT=$2
-        shift # option has parameter
-        ;;
       -a|--abis)
         export ABI_NAMES=$2
-        shift # option has parameter
-        ;;
-      -l|--level)
-        export ANDROID_API_LEVEL=$2
         shift # option has parameter
         ;;
       -b|--build)
@@ -103,25 +87,8 @@ done
 
 . "$ROOT_DIR"/scripts/sdkenv.sh
 
-# check if NDK exists
-if [ -z $ANDROID_NDK_ROOT ]; then
-  echo "Error: no Android NDK found."
-  echo "Please install via Android Studio > SDK Manager > SDK Tools > NDK (Side by side),"
-  echo "or use the --ndk option or ANDROID_NDK_ROOT environment variable to specify the"
-  echo "path to your NDK installation."
-  exit 1
-elif [ ! -d "$ANDROID_NDK_ROOT" ]; then
-  echo "Error: Android NDK folder not found: $ANDROID_NDK_ROOT"
-  echo "Please install via Android Studio > SDK Manager > SDK Tools > NDK (Side by side),"
-  echo "or use the --ndk option or ANDROID_NDK_ROOT environment variable to specify the"
-  echo "path to your NDK installation."
-  exit 1
-fi
-
 echo "### Build type: ${BUILD_TYPE}"
-echo "### NDK: $(basename $ANDROID_NDK_ROOT 2>/dev/null)"
 echo "### ABIs: ${ABI_NAMES}"
-echo "### Android API level: ${ANDROID_API_LEVEL}"
 
 # check if additional patches directory is valid
 if [[ ! -z "$ADDITIONAL_PATCHES" && ! -d "$ADDITIONAL_PATCHES" ]]; then
@@ -185,9 +152,7 @@ done
 
 # write build.txt
 echo "Build type: ${BUILD_TYPE}" >> "${BUILD_TXT}"
-echo "NDK: $(basename $ANDROID_NDK_ROOT)" >> "${BUILD_TXT}"
 echo "ABIs: ${ABI_NAMES}" >> "${BUILD_TXT}"
-echo "Android API level: ${ANDROID_API_LEVEL}" >> "${BUILD_TXT}"
 
 for src in "${SRCROOT}"/*; do
   cd "${src}"
@@ -223,20 +188,3 @@ done
 rm -rf "${INSTALL_ROOT}.bak"
 
 echo -e "\n### Finished building GNUstep Android toolchain"
-
-# make toolchain relocatable if requested
-if [[ $DIST_ROOT ]]; then
-  DIST_ROOT=${DIST_ROOT/HOME/\$\{HOME\}}
-  ANDROID_SDK_DIST_ROOT=${ANDROID_SDK_ROOT/$HOME/\$\{HOME\}}
-  ANDROID_NDK_DIST_ROOT=${ANDROID_SDK_DIST_ROOT}/ndk/$(basename $ANDROID_NDK_ROOT)
-  
-  echo -e "\n### Making toolchain relocatable with:"
-  echo "### - DIST_ROOT: $DIST_ROOT"
-  echo "### - ANDROID_SDK_ROOT: $ANDROID_SDK_DIST_ROOT"
-  echo "### - ANDROID_NDK_ROOT: $ANDROID_NDK_DIST_ROOT"
-  
-  # replaces suitable paths in all text files
-  find "$INSTALL_ROOT" -type f | perl -lne 'print if -T' | xargs perl -i -pe "s|$INSTALL_ROOT|${DIST_ROOT/\$/\\\$}|g; s|$ANDROID_SDK_ROOT|${ANDROID_SDK_DIST_ROOT/\$/\\\$}|g; s|$ANDROID_NDK_ROOT|${ANDROID_NDK_DIST_ROOT/\$/\\\$}|g;"
-  
-  echo -e "\n### Done"
-fi

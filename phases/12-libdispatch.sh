@@ -5,7 +5,8 @@ set -e # make any subsequent failing command exit the script
 . `dirname $0`/../scripts/common.sh
 
 PROJECT=libdispatch
-GITHUB_REPO=apple/swift-corelibs-libdispatch
+GITHUB_REPO=swiftlang/swift-corelibs-libdispatch
+TAG=swift-6.2-RELEASE
 
 # load environment and prepare project
 if ! prepare_project $PROJECT $GITHUB_REPO; then
@@ -25,6 +26,7 @@ ${CMAKE} .. \
   `# use blocks runtime from libobjc2 with libdispatch-own-blocksruntime.patch` \
   -DBlocksRuntime_INCLUDE_DIR="${INSTALL_PREFIX}/include" \
   -DBlocksRuntime_LIBRARIES="${INSTALL_PREFIX}/lib/libobjc.so" \
+  -DBUILD_TESTING=NO \
 
 echo -e "\n### Building"
 make -j${MAKE_JOBS}
